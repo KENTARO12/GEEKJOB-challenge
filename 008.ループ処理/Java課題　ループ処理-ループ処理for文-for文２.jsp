@@ -1,17 +1,15 @@
 <%-- 
-    Document   : Java課題　ループ処理-ループ処理for文-for文２
-    Created on : 2018/05/25, 14:26:39
+    Document   : newjsp
+    Created on : 2018/05/25, 14:44:38
     Author     : guest1Day
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>JSP Page</title>
-    </head>
-    <body>
-        <h1>Hello World!</h1>
-    </body>
-</html>
+<%
+    String letter="";
+    for(int i=0;i<30;i++){
+        letter=letter+"A";
+    }
+    out.print(letter);
+%>
