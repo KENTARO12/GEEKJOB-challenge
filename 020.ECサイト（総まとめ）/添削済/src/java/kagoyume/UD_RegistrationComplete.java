@@ -3,22 +3,27 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package system;
+package kagoyume;
 
+import beans.user;
 import java.io.IOException;
 import java.io.PrintWriter;
+import static java.lang.System.out;
+import java.sql.SQLException;
+import java.text.ParseException;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import usefullObject.user_tDAO;
 
 /**
  *
  * @author guest1Day
  */
-public class logout extends HttpServlet {
+public class UD_RegistrationComplete extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -32,32 +37,50 @@ public class logout extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
+        
         HttpSession hs = request.getSession();
+        user ud = (user)hs.getAttribute("udAlt");
+        user udAlt2 = new user();//検索結果数があるかどうかの確認。中身を使うことはない。
+        
+        String url = null;
+        
         try (PrintWriter out = response.getWriter()) {
-            hs.removeAttribute("user");
-            
-            if(hs.getAttribute("stock")!=null){
-                hs.removeAttribute("stock");
+            try{
+                udAlt2 = user_tDAO.getInstance().select(ud);//同じアカウントがないかの判定に使う
+
+                user_tDAO.getInstance().insert(ud);
+            }catch(ParseException e){
+                //データの変換に失敗したらエラーページにエラー文を渡して表示
+                String error = "DAOにおいて、データ変換時にエラーが発生しました："+e.toString();
+                System.out.println(error);
+                request.setAttribute("error", error);
+                url = "error.jsp";
+            }catch(SQLException e){
+                //sql周りで失敗したら(入力内容が長すぎ、など)エラーページにエラー文を渡して表示
+                String error = null;//エラー内容をもっと細分化すべき。
+                if(e.toString().contains("Data too long")){
+                    error = "入力した内容が長すぎます："+e.toString();
+                }else{
+                    error = e.toString();
+                }
+                System.out.println(error);
+                request.setAttribute("error", error);
+                url = "error.jsp";
             }
-            if(hs.getAttribute("serachresult")!=null){
-                hs.removeAttribute("searchresult");
+            //sql文において、selectの該当結果が無い(重複がない)場合、userIDは0以外になる。
+            if(udAlt2.getUserID()!=0){
+                url = "ud_RegistrationDenied.jsp";
+            }else{
+                url = "ud_RegistrationComplete.jsp";
             }
-            if(hs.getAttribute("input")!=null){
-                hs.removeAttribute("input");
-            }
-            
-            RequestDispatcher rd = request.getRequestDispatcher("top.jsp");
+            RequestDispatcher rd = request.getRequestDispatcher(url);
             rd.forward(request, response);
-        }catch(Exception e){//JSPpageにforward出来ないので、無理やりここに処理を書く。もっといい方法もありそう。
-            System.out.println("エラーが発生しました。以下の項目を確認してください。");
-            System.out.println(e.getMessage());
-            System.out.println("");
-            System.out.println("<!DOCTYPE html>");
-            System.out.println("<html>");
-            System.out.println("<body>");
-            System.out.println("<a href="+"top.jsp"+">トップへ戻る</a>");
-            System.out.println("</body>");
-            System.out.println("</html>");
+        }catch(Exception e){
+            //データ挿入に失敗したらエラーページにエラー文を渡して表示
+            request.setAttribute("error", e.toString());
+            request.getRequestDispatcher("/error.jsp").forward(request, response);
+        } finally {
+            out.close();
         }
     }
 

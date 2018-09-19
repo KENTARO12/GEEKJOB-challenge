@@ -3,21 +3,23 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package MoveTo_JSP;
+package kagoyume;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import static java.lang.System.out;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  *
  * @author guest1Day
  */
-public class MoveToAdditemJSP extends HttpServlet {
+public class UD_Logout extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -32,19 +34,26 @@ public class MoveToAdditemJSP extends HttpServlet {
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
-            //web-inf内のJSPにアクセスするためだけのサーブレット
-            RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/additem.jsp");
+            String url = null;
+            try{
+                HttpSession hs = request.getSession();
+                hs.removeAttribute("loginUser");
+
+                url = "top.jsp";
+                /*top.jsp以外からログアウトした時の処理も考えたが、うまく動かなかったので一時棚上げ。
+                if(hs.getAttribute("link")!=null){
+                    url=(String) hs.getAttribute("link");
+                }*/
+                
+            }catch(Exception e){
+                //データ挿入に失敗したらエラーページにエラー文を渡して表示
+                request.setAttribute("error", e.getMessage());
+                url = "error.jsp";
+            }
+            RequestDispatcher rd = request.getRequestDispatcher(url);
             rd.forward(request, response);
-        }catch(Exception e){//JSPpageにforward出来ないので、無理やりここに処理を書く。もっといい方法もありそう。
-            System.out.println("エラーが発生しました。以下の項目を確認してください。");
-            System.out.println(e.getMessage());
-            System.out.println("");
-            System.out.println("<!DOCTYPE html>");
-            System.out.println("<html>");
-            System.out.println("<body>");
-            System.out.println("<a href="+"top.jsp"+">トップへ戻る</a>");
-            System.out.println("</body>");
-            System.out.println("</html>");
+        } finally {
+            out.close();
         }
     }
 

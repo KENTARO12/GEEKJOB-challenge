@@ -3,26 +3,26 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package system;
+package kagoyume;
 
-import beans.item;
+import beans.user;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.text.ParseException;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import usefullObject.user_tDAO;
 
 /**
  *
  * @author guest1Day
  */
-public class stockedit_delete extends HttpServlet {
+public class UD_LoginConfirm extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -36,39 +36,56 @@ public class stockedit_delete extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
+        request.setCharacterEncoding("UTF-8");
+        
         HttpSession hs = request.getSession();
-        Connection db_con = null;
-        PreparedStatement db_st = null;
+        user ud = new user();//loginUserとしての情報
+        
+        String url = null;//遷移先のURL
+        
         try (PrintWriter out = response.getWriter()) {
-            item item1 = (item)hs.getAttribute("delete");
-            String strURL = null;
-            if(item1.getNumber()!=0){
-                strURL = "/WEB-INF/stockedit_list.jsp";
-            }else{
-                Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
-                db_con = DriverManager.getConnection("jdbc:mysql://localhost:3306/self_stockcontrol?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC","Kenneth","password");
-                db_st = db_con.prepareStatement("UPDATE stock SET status=-1 WHERE code=?");
-                db_st.setString(1,item1.getCode());
-                int row = db_st.executeUpdate();
-
-                db_st.close();
-                db_con.close();
-                request.setAttribute("deleted",item1.getName());
-                hs.removeAttribute("delete");
-                strURL = "/WEB-INF/stockedit_search.jsp";
+            user udAlt = new user();//入力フォームに入れた仮情報
+            udAlt.setName(request.getParameter("name"));
+            udAlt.setPassword(request.getParameter("pass"));
+            if(hs.getAttribute("udAlt")!=null){
+                hs.removeAttribute("udAlt");
             }
-            RequestDispatcher rd = request.getRequestDispatcher(strURL);
+            hs.setAttribute("udAlt",udAlt);
+            try{
+             ud = user_tDAO.getInstance().select(udAlt);
+            }catch(ParseException e){
+                //データの変換に失敗したらエラーページにエラー文を渡して表示
+                String error = "DAOにおいて、データ変換時にエラーが発生しました："+e.toString();
+                System.out.println(error);
+                request.setAttribute("error", error);
+                url = "error.jsp";
+            }catch(SQLException e){
+                //sql周りで失敗したら(入力内容が長すぎ、など)エラーページにエラー文を渡して表示
+                String error = null;//エラー内容をもっと細分化すべき。
+                if(e.toString().contains("Data too long")){
+                    error = "入力した内容が長すぎます："+e.toString();
+                }else{
+                    error = e.toString();
+                }
+                System.out.println(error);
+                request.setAttribute("error", error);
+                url = "error.jsp";
+            }
+            //sql文でselectし、該当結果がある場合、userIDは0以外になる。
+            if(ud.getUserID()!=0){
+                hs.setAttribute("loginUser",ud);
+                if(hs.getAttribute("referer")!=null){
+                    url = (String)hs.getAttribute("referer");
+                }else{
+                    url = "top.jsp";
+                }
+            }else{
+                url = "ud_LoginDenied.jsp";
+            }
+            RequestDispatcher rd = request.getRequestDispatcher(url);
             rd.forward(request, response);
-        }catch(Exception e){//JSPpageにforward出来ないので、無理やりここに処理を書く。もっといい方法もありそう。
-            System.out.println("エラーが発生しました。以下の項目を確認してください。");
-            System.out.println(e.getMessage());
-            System.out.println("");
-            System.out.println("<!DOCTYPE html>");
-            System.out.println("<html>");
-            System.out.println("<body>");
-            System.out.println("<a href="+"top.jsp"+">トップへ戻る</a>");
-            System.out.println("</body>");
-            System.out.println("</html>");
+        } catch (Exception e){
+            System.out.println("エラーが発生しました："+e.toString());
         }
     }
 

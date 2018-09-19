@@ -3,22 +3,24 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package MoveTo_JSP;
+package kagoyume;
 
+import beans.historybean;
 import java.io.IOException;
 import java.io.PrintWriter;
-import javax.servlet.RequestDispatcher;
+import java.util.ArrayList;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import usefullObject.buy_tDAO;
 
 /**
  *
  * @author guest1Day
  */
-public class TryToStockinputJSP extends HttpServlet {
+public class UD_History extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -32,20 +34,23 @@ public class TryToStockinputJSP extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
+        
+        HttpSession hs = request.getSession();
+        /*Connection db_con = null;
+        PreparedStatement db_st = null;
+        ResultSet db_data = null;*/
+        
         try (PrintWriter out = response.getWriter()) {
-            //web-inf内のJSPにアクセスするためだけのサーブレット
-            RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/stockinput_search.jsp");
-            rd.forward(request, response);
-        }catch(Exception e){//JSPpageにforward出来ないので、無理やりここに処理を書く。もっといい方法もありそう。
-            System.out.println("エラーが発生しました。以下の項目を確認してください。");
-            System.out.println(e.getMessage());
-            System.out.println("");
-            System.out.println("<!DOCTYPE html>");
-            System.out.println("<html>");
-            System.out.println("<body>");
-            System.out.println("<a href="+"top.jsp"+">トップへ戻る</a>");
-            System.out.println("</body>");
-            System.out.println("</html>");
+            //ここの引数は(user)hs.getAttribute("loginUser")のgetUserID();にすべき？
+            int userID = Integer.valueOf(request.getParameter("id"));
+            
+            //購入情報をArrayListに入れ、セッションに保管。
+            ArrayList<historybean> array = buy_tDAO.getInstance().select(userID);
+            hs.setAttribute("history",array);
+                    
+            request.getRequestDispatcher("ud_History.jsp").forward(request, response);
+        }catch (Exception e){
+            System.out.println("接続時にエラーが発生しました："+e.toString());
         }
     }
 

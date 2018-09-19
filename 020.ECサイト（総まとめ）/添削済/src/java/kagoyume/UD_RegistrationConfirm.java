@@ -3,21 +3,24 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package MoveTo_JSP;
+package kagoyume;
 
+import beans.user;
 import java.io.IOException;
 import java.io.PrintWriter;
+import static java.lang.System.out;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  *
  * @author guest1Day
  */
-public class MoveToStocksearchJSP extends HttpServlet {
+public class UD_RegistrationConfirm extends HttpServlet {
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -31,20 +34,30 @@ public class MoveToStocksearchJSP extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
+        request.setCharacterEncoding("UTF-8");
         try (PrintWriter out = response.getWriter()) {
-            //web-inf内のJSPにアクセスするためだけのサーブレット
-            RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/stocksearch.jsp");
-            rd.forward(request, response);
-        }catch(Exception e){//JSPpageにforward出来ないので、無理やりここに処理を書く。もっといい方法もありそう。
-            System.out.println("エラーが発生しました。以下の項目を確認してください。");
-            System.out.println(e.getMessage());
-            System.out.println("");
-            System.out.println("<!DOCTYPE html>");
-            System.out.println("<html>");
-            System.out.println("<body>");
-            System.out.println("<a href="+"top.jsp"+">トップへ戻る</a>");
-            System.out.println("</body>");
-            System.out.println("</html>");
+            
+            HttpSession hs = request.getSession(false);
+            user udAlt = new user();//仮情報なので"udAlt"としています。
+            
+            udAlt.setName(request.getParameter("name"));
+            udAlt.setPassword(request.getParameter("pass"));
+            udAlt.setMail(request.getParameter("mail"));
+            udAlt.setAddress(request.getParameter("address"));
+
+            if(hs.getAttribute("udAlt")!=null){
+                hs.removeAttribute("udAlt");
+            }
+            hs.setAttribute("udAlt",udAlt);
+
+            RequestDispatcher rd = request.getRequestDispatcher("ud_RegistrationConfirm.jsp");
+            rd.forward(request,response);
+        }catch(Exception e){
+            //データ挿入に失敗したらエラーページにエラー文を渡して表示
+            request.setAttribute("error", e.getMessage());
+            request.getRequestDispatcher("/error.jsp").forward(request, response);
+        } finally {
+            out.close();
         }
     }
 
